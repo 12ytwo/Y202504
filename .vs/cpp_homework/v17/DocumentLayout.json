@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\ASUS\\Desktop\\cpp_homework\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{3F6CACF6-7F34-4847-AC3C-05DD9E8B2BAD}|cpp_homework\\cpp_homework.vcxproj|C:\\Users\\ASUS\\Desktop\\cpp_homework\\cpp_homework\\source_code.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3F6CACF6-7F34-4847-AC3C-05DD9E8B2BAD}|cpp_homework\\cpp_homework.vcxproj|solutionrelative:cpp_homework\\source_code.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "source_code.cpp",
+              "DocumentMoniker": "C:\\Users\\ASUS\\Desktop\\cpp_homework\\cpp_homework\\source_code.cpp",
+              "RelativeDocumentMoniker": "cpp_homework\\source_code.cpp",
+              "ToolTip": "C:\\Users\\ASUS\\Desktop\\cpp_homework\\cpp_homework\\source_code.cpp",
+              "RelativeToolTip": "cpp_homework\\source_code.cpp",
+              "ViewState": "AgIAAGUAAAAAAAAAAAAUwHUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-04-15T13:09:31.555Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
