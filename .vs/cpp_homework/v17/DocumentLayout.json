@@ -5,6 +5,10 @@
     {
       "AbsoluteMoniker": "D:0:0:{3F6CACF6-7F34-4847-AC3C-05DD9E8B2BAD}|cpp_homework\\cpp_homework.vcxproj|C:\\Users\\ASUS\\Desktop\\cpp_homework\\cpp_homework\\source_code.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{3F6CACF6-7F34-4847-AC3C-05DD9E8B2BAD}|cpp_homework\\cpp_homework.vcxproj|solutionrelative:cpp_homework\\source_code.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3F6CACF6-7F34-4847-AC3C-05DD9E8B2BAD}|cpp_homework\\cpp_homework.vcxproj|C:\\Users\\ASUS\\Desktop\\cpp_homework\\cpp_homework\\CharacterButton.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3F6CACF6-7F34-4847-AC3C-05DD9E8B2BAD}|cpp_homework\\cpp_homework.vcxproj|solutionrelative:cpp_homework\\CharacterButton.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,8 +18,20 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "CharacterButton.h",
+              "DocumentMoniker": "C:\\Users\\ASUS\\Desktop\\cpp_homework\\cpp_homework\\CharacterButton.h",
+              "RelativeDocumentMoniker": "cpp_homework\\CharacterButton.h",
+              "ToolTip": "C:\\Users\\ASUS\\Desktop\\cpp_homework\\cpp_homework\\CharacterButton.h",
+              "RelativeToolTip": "cpp_homework\\CharacterButton.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-05-02T03:32:17.432Z"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -24,9 +40,9 @@
               "RelativeDocumentMoniker": "cpp_homework\\source_code.cpp",
               "ToolTip": "C:\\Users\\ASUS\\Desktop\\cpp_homework\\cpp_homework\\source_code.cpp",
               "RelativeToolTip": "cpp_homework\\source_code.cpp",
-              "ViewState": "AgIAAGkCAAAAAAAAAADwv3UCAAAOAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwCEAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-04-17T14:10:54.601Z",
+              "WhenOpened": "2025-05-01T08:36:14.392Z",
               "EditorCaption": ""
             }
           ]

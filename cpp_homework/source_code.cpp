@@ -1,6 +1,4 @@
 #include<easyx.h>
-#include<graphics.h>
-#include<string>
 #include<vector>
 #include<cmath>
 
@@ -8,20 +6,28 @@
 IMAGE img_background;
 IMAGE img_shadow;
 
-//绘制透明底图片的自定义函数
 #pragma comment(lib,"MSIMG32.LIB")
 #pragma comment(lib,"Winmm.lib")
 
+
 bool running = true;
 bool is_game_started = false;
+bool is_character_selection = false;  // 角色选择状态
+int selected_character = 0;           // 选中的角色索引
 
+// 角色选择按钮布局参数
+const int CHAR_BTN_WIDTH = 160;      // 单个按钮宽度
+const int CHAR_BTN_HEIGHT = 200;     // 单个按钮高度
+const int CHAR_BTN_SPACING = 40;     // 按钮间距
+const int CHAR_BTN_TOP = 300;        // 距离顶部的固定位置
+
+//绘制透明底图片的自定义函数
 inline void putimage_alpha(int x, int y, IMAGE* img) {
 	int w = img->getwidth();
 	int h = img->getheight();
 	AlphaBlend(GetImageHDC(NULL), x, y, w, h,
 		GetImageHDC(img), 0, 0, w, h, { AC_SRC_OVER,0,255,AC_SRC_ALPHA });
 }
-
 
 class Atlas {
 public:
@@ -44,12 +50,12 @@ public:
 public:
 	std::vector<IMAGE*>frame_list;
 };
-	
-Atlas* atlas_player_left;
-Atlas* atlas_player_right;
+
+// 存储不同角色的动画图集
+Atlas* atlas_player_left[3];  // 3个角色的左移动画
+Atlas* atlas_player_right[3]; // 3个角色的右移动画
 Atlas* atlas_enemy_left;
 Atlas* atlas_enemy_right;
-
 
 class Animation {
 public:
@@ -69,7 +75,7 @@ public:
 			timer = 0;
 		}
 
-		putimage_alpha(x, y,anim_atlas-> frame_list[idx_frame]);
+		putimage_alpha(x, y, anim_atlas->frame_list[idx_frame]);
 	}
 
 
@@ -80,17 +86,11 @@ private:
 	Atlas* anim_atlas;
 };
 
-
-
-
 const int WIDTH0 = 1280;//页面宽度
 const int HEIGHT0 = 720;//页面高度
 
-const int BUTTON_WIDTH = 192;
+const int BUTTON_WIDTH = 190;
 const int BUTTON_HEIGHT = 75;
-
-
-
 
 class Player {
 public:
@@ -98,10 +98,11 @@ public:
 	const int PLAYER_HEIGHT = 80;//玩家高度
 	POINT position = { 300,300 };//初始化玩家位置
 public:
-	Player() {
+	Player( ) {
 		loadimage(&img_shadow, _T("img/shadow_player.png"));
-		anim_left = new Animation(atlas_player_left, 45);
-		anim_right = new Animation(atlas_player_right, 45);
+		// 使用选中的角色图集
+		anim_left = new Animation(atlas_player_left[selected_character], 45);
+		anim_right = new Animation(atlas_player_right[selected_character], 45);
 	};
 
 	~Player() {
@@ -109,41 +110,40 @@ public:
 		delete anim_right;
 	}
 
-	
 	void ProcessEvent(const ExMessage& msg) {
-			//通过按键来实现角色移动
-			if (msg.message == WM_KEYDOWN) {
-				switch (msg.vkcode) {
-				case VK_UP:
-					is_move_up = true;
-					break;
-				case VK_DOWN:
-					is_move_down = true;
-					break;
-				case VK_LEFT:
-					is_move_left = true;
-					break;
-				case VK_RIGHT:
-					is_move_right = true;
-					break;
-				}
+		//通过按键来实现角色移动
+		if (msg.message == WM_KEYDOWN) {
+			switch (msg.vkcode) {
+			case VK_UP:
+				is_move_up = true;
+				break;
+			case VK_DOWN:
+				is_move_down = true;
+				break;
+			case VK_LEFT:
+				is_move_left = true;
+				break;
+			case VK_RIGHT:
+				is_move_right = true;
+				break;
 			}
-			else if (msg.message == WM_KEYUP) {
-				switch (msg.vkcode) {
-				case VK_UP:
-					is_move_up = false;
-					break;
-				case VK_DOWN:
-					is_move_down = false;
-					break;
-				case VK_LEFT:
-					is_move_left = false;
-					break;
-				case VK_RIGHT:
-					is_move_right = false;
-					break;
-				}
+		}
+		else if (msg.message == WM_KEYUP) {
+			switch (msg.vkcode) {
+			case VK_UP:
+				is_move_up = false;
+				break;
+			case VK_DOWN:
+				is_move_down = false;
+				break;
+			case VK_LEFT:
+				is_move_left = false;
+				break;
+			case VK_RIGHT:
+				is_move_right = false;
+				break;
 			}
+		}
 	}
 
 	void Move() {
@@ -174,7 +174,6 @@ public:
 		int pos_shadow_y = position.y + PLAYER_HEIGHT - 8;//偏移一点点
 		putimage_alpha(pos_shadow_x, pos_shadow_y, &img_shadow);
 
-
 		static bool facing_left = false;
 		int dir_x = is_move_right - is_move_left;
 		if (dir_x < 0)
@@ -188,16 +187,13 @@ public:
 			anim_right->Play(position.x, position.y, delta);
 	}
 
-
 	const POINT& GetPosition() const {
 		return position;
 	};
 
-
 private:
 	const int SHADOW_WIDTH = 32;//影子大小
 	const int SPEED = 5;//定义速度
-	
 
 private:
 	IMAGE img_shadow;
@@ -207,10 +203,7 @@ private:
 	bool is_move_down = false;
 	bool is_move_left = false;
 	bool is_move_right = false;
-
 };
-
-
 
 class Bullet {
 public:
@@ -221,8 +214,24 @@ public:
 	~Bullet() = default;
 
 	void Draw() const {
-		setlinecolor(RED);
-		setfillcolor(RED);
+		// 根据选择的角色改变子弹颜色
+		switch (selected_character) {
+		case 0:
+			setfillcolor(RGB(252, 225, 235));
+			setlinecolor(RGB(215, 108, 124));
+			break;
+		case 1:
+			setlinecolor(RGB(134, 218, 227));
+			setfillcolor(RGB(51, 166, 223));
+			break;
+		case 2:
+			setlinecolor(RGB(250, 210, 89));
+			setfillcolor(RGB(255, 183, 43));
+			break;
+		default:
+			setlinecolor(RED);
+			setfillcolor(RED);
+		}
 		fillcircle(position.x, position.y, R);
 	}
 
@@ -234,7 +243,6 @@ private:
 };
 
 
-
 class Enemy {
 public:
 	//敌人生成边界
@@ -243,12 +251,11 @@ public:
 		Down,
 		Left,
 		Right
-
 	};
 
 	Enemy() {
 		loadimage(&img_shadow, _T("img/shadow_enemy.png"));
-		anim_left = new Animation(atlas_enemy_left,45);
+		anim_left = new Animation(atlas_enemy_left, 45);
 		anim_right = new Animation(atlas_enemy_right, 45);
 
 		SpawnEdge edge = (SpawnEdge)(rand() % 4);
@@ -308,7 +315,6 @@ public:
 		int pos_shadow_y = position.y + FRAME_HEIGHT - 31;//偏移一点点
 		putimage_alpha(pos_shadow_x, pos_shadow_y, &img_shadow);
 
-
 		if (facing_left)
 			anim_left->Play(position.x, position.y, delta);
 		else
@@ -332,37 +338,35 @@ public:
 		return alive;
 	}
 
-
 private:
-	const int FRAME_WIDTH = 80;//敌人宽度
-	const int FRAME_HEIGHT = 80;//敌人高度
+	const int FRAME_WIDTH = 60;//敌人宽度
+	const int FRAME_HEIGHT = 60;//敌人高度
 	const int SHADOW_WIDTH = 48;//影子大小
-	const int SPEED = 5;//定义速度
+	const int SPEED = 4;//定义速度
 
 private:
 	IMAGE img_shadow;
 	Animation* anim_left;
 	Animation* anim_right;
-	POINT position = { 0,0 };//初始化敌人位置};
-	bool facing_left = false; 
+	POINT position = { 0,0 };//初始化敌人位置;
+	bool facing_left = false;
 	bool alive = true;
 	bool is_move_up = false;
 	bool is_move_down = false;
 	bool is_move_left = false;
 	bool is_move_right = false;
-
 };
 
 
 
+//按钮类
 class Button {
 public:
-	Button(RECT rect,LPCTSTR path_img_idle,LPCTSTR path_img_hovered,LPCTSTR path_img_pushed) {
+	Button(RECT rect, LPCTSTR path_img_idle, LPCTSTR path_img_hovered, LPCTSTR path_img_pushed) {
 		region = rect;
 		loadimage(&img_idle, path_img_idle);
 		loadimage(&img_hovered, path_img_hovered);
 		loadimage(&img_pushed, path_img_pushed);
-
 	}
 
 	~Button() = default;
@@ -372,7 +376,7 @@ public:
 		case WM_MOUSEMOVE:
 			if (status == Status::Idle && CheckCursorHit(msg.x, msg.y))
 				status = Status::Hovered;
-			else if (status == Status::Hovered && CheckCursorHit(msg.x, msg.y))
+			else if (status == Status::Hovered && !CheckCursorHit(msg.x, msg.y))
 				status = Status::Idle;
 			break;
 		case WM_LBUTTONDOWN:
@@ -380,7 +384,7 @@ public:
 				status = Status::Pushed;
 			break;
 		case WM_LBUTTONUP:
-			if (status == Status::Pushed)
+			if (status == Status::Pushed && CheckCursorHit(msg.x, msg.y))
 				OnClick();
 			break;
 		default:
@@ -391,13 +395,13 @@ public:
 	void Draw() {
 		switch (status) {
 		case Status::Idle:
-			putimage(region.left, region.top, &img_idle);
+			putimage_alpha(region.left, region.top, &img_idle);
 			break;
 		case Status::Hovered:
-			putimage(region.left, region.top, &img_hovered);
+			putimage_alpha(region.left, region.top, &img_hovered);
 			break;
 		case Status::Pushed:
-			putimage(region.left, region.top, &img_pushed);
+			putimage_alpha(region.left, region.top, &img_pushed);
 			break;
 		}
 	}
@@ -407,7 +411,7 @@ protected:
 
 private:
 	enum class Status {
-		Idle=0,
+		Idle = 0,
 		Hovered,
 		Pushed
 	};
@@ -431,16 +435,15 @@ private:
 class StartGameButton :public Button {
 public:
 	StartGameButton(RECT rect, LPCTSTR path_img_idle, LPCTSTR path_img_hovered, LPCTSTR path_img_pushed)
-		:Button(rect,path_img_idle,path_img_hovered,path_img_pushed){}
+		:Button(rect, path_img_idle, path_img_hovered, path_img_pushed) {}
 	~StartGameButton() = default;
 
 protected:
 	void OnClick() {
-		is_game_started = true;
-
-		mciSendString(_T("play bgm repeat from 0"), NULL, 0, NULL);
+		is_character_selection = true;  // 进入角色选择界面
 	}
 };
+
 //退出游戏按钮
 class QuitGameButton :public Button {
 public:
@@ -454,31 +457,26 @@ protected:
 	}
 };
 
+// 角色选择按钮
+class CharacterButton :public Button {
+public:
+	CharacterButton(RECT rect, LPCTSTR path_img_idle, LPCTSTR path_img_hovered, LPCTSTR path_img_pushed, int character_index)
+		:Button(rect, path_img_idle, path_img_hovered, path_img_pushed), character_index(character_index) {}
+	~CharacterButton() = default;
 
-
-
-int idx_current_anim = 0;
-
-const int PLAYER_ANIM_NUM = 5;//定义动画帧总数量
-
-
-//把动画帧图片全部导入
-  // 创立数组，有规律地命名图片
-IMAGE img_player_left[PLAYER_ANIM_NUM];
-IMAGE img_player_right[PLAYER_ANIM_NUM];
-//导入动画的自定义函数
-void LoadAnimation() {
-
-	for (size_t i = 0; i < PLAYER_ANIM_NUM; i++) {
-		std::wstring path = L"img/player_left_" + std::to_wstring(i) + L".png";
-		loadimage(&img_player_left[i], path.c_str(), 100, 100);
+protected:
+	void OnClick() {
+		selected_character = character_index;
+		is_character_selection = false;
+		is_game_started = true;
+		mciSendString(_T("play bgm repeat from 0"), NULL, 0, NULL);
 	}
 
-	for (size_t i = 0; i < PLAYER_ANIM_NUM; i++) {
-		std::wstring path = L"img/player_right_" + std::to_wstring(i) + L".png";
-		loadimage(&img_player_right[i], path.c_str(), 100, 100);
-	}
-}
+private:
+	int character_index;
+	RECT region;//描述位置和大小
+};
+
 
 
 
@@ -488,7 +486,7 @@ void TryGenerateEnemy(std::vector<Enemy*>& enemy_list) {
 	static int  counter = 0;
 	if ((++counter) % INTERVAL == 0) {
 		enemy_list.push_back(new Enemy());
-			}
+	}
 };
 
 //更新子弹的位置
@@ -505,32 +503,93 @@ void UpdateBullets(std::vector<Bullet>& bullet_list, const Player& player) {
 	}
 }
 
-
-
+//绘制当前玩家得分
 void DrawPlayerScore(int score) {
 	static TCHAR text[64];
 	_stprintf_s(text, _T("当前玩家得分为：%d"), score);
-
+	settextstyle(22, 0, _T("微软雅黑"));
 	setbkmode(TRANSPARENT);
-	settextcolor(WHITE);
+	settextcolor(RGB(80, 134, 85));
 	outtextxy(10, 10, text);
 }
+
+
+
+// 绘制角色选择界面
+void DrawCharacterSelection() {
+	static IMAGE img_character_bg;
+	static CharacterButton* btn_character[3] = { nullptr }; // 使用数组管理按钮
+
+	// 首次加载时初始化
+	if (!btn_character[0]) {
+		loadimage(&img_character_bg, _T("img/character_selection_bg.png"), WIDTH0, HEIGHT0);
+
+		// 计算起始X坐标（整体居中）
+		int total_width = CHAR_BTN_WIDTH * 3 + CHAR_BTN_SPACING * 2;
+		int start_x = (WIDTH0 - total_width) / 2;
+
+		// 初始化三个按钮
+		for (int i = 0; i < 3; i++) {
+			RECT rect = {
+				start_x + i * (CHAR_BTN_WIDTH + CHAR_BTN_SPACING),
+				CHAR_BTN_TOP,
+				start_x + (i + 1) * CHAR_BTN_WIDTH + i * CHAR_BTN_SPACING,
+				CHAR_BTN_TOP + CHAR_BTN_HEIGHT
+			};
+
+			TCHAR path_idle[64], path_hovered[64], path_pushed[64];
+			_stprintf_s(path_idle, _T("img/character%d_idle.png"), i);
+			_stprintf_s(path_hovered, _T("img/character%d_hovered.png"), i);
+			_stprintf_s(path_pushed, _T("img/character%d_pushed.png"), i);
+
+			btn_character[i] = new CharacterButton(rect, path_idle, path_hovered, path_pushed, i);
+		}
+	}
+
+	// 绘制背景
+	putimage(0, 0, &img_character_bg);
+
+	// 绘制标题
+	setbkmode(TRANSPARENT);
+	settextcolor(RGB(80, 134, 85));
+	settextstyle(36, 0, _T("微软雅黑"));
+	outtextxy(WIDTH0 / 2 - 120, 180, _T("请选择你的宝可梦"));
+
+	// 处理事件和绘制
+	ExMessage msg;
+	while (peekmessage(&msg)) {
+
+		for (int i = 0; i < 3; i++) {
+			btn_character[i]->ProcessEvent(msg);
+		}
+	}
+
+	for (int i = 0; i < 3; i++) {
+		btn_character[i]->Draw();
+	}
+}
+
 
 
 int main() {
 	initgraph(WIDTH0, HEIGHT0);
 
-	atlas_player_left = new Atlas(_T("img/player_left_%d.png"), 6);
-	atlas_player_right = new Atlas(_T("img/player_right_%d.png"), 6);
+	//加载三个角色的动画图集
+	atlas_player_left[0] = new Atlas(_T("img/character1_left_%d.png"), 6);
+	atlas_player_right[0] = new Atlas(_T("img/character1_right_%d.png"), 6);
+	atlas_player_left[1] = new Atlas(_T("img/character2_left_%d.png"), 6);
+	atlas_player_right[1] = new Atlas(_T("img/character2_right_%d.png"), 6);
+	atlas_player_left[2] = new Atlas(_T("img/character3_left_%d.png"), 6);
+	atlas_player_right[2] = new Atlas(_T("img/character3_right_%d.png"), 6);
+
 	atlas_enemy_left = new Atlas(_T("img/enemy_left_%d.png"), 6);
 	atlas_enemy_right = new Atlas(_T("img/enemy_right_%d.png"), 6);
 
 	mciSendString(_T("open mus/bgm.mp3 alias bgm"), NULL, 0, NULL);
 	mciSendString(_T("open mus/hit.wav alias hit"), NULL, 0, NULL);
 
-
 	int score = 0;
-	Player player;
+	Player* player = nullptr;
 	ExMessage msg;
 	IMAGE img_menu;
 	IMAGE img_background;
@@ -565,13 +624,14 @@ int main() {
 	BeginBatchDraw();
 
 	while (running) {
-
 		DWORD begin_time = GetTickCount();
 
-		ExMessage msg;
 		while (peekmessage(&msg)) {
 			if (is_game_started) {
-				player.ProcessEvent(msg);
+				player->ProcessEvent(msg);
+			}
+			else if (is_character_selection) {
+				// 角色选择界面的消息处理在DrawCharacterSelection函数中完成
 			}
 			else {
 				btn_start_game.ProcessEvent(msg);
@@ -580,12 +640,16 @@ int main() {
 		}
 
 		if (is_game_started) {
-			player.Move();
-			UpdateBullets(bullet_list, player);
+			if (!player) {
+				player = new Player();
+			}
+
+			player->Move();
+			UpdateBullets(bullet_list, *player);
 			TryGenerateEnemy(enemy_list);
 			//更新敌人位置
 			for (Enemy* enemy : enemy_list)
-				enemy->Move(player);
+				enemy->Move(*player);
 
 			//检测子弹与敌人的碰撞
 			for (Enemy* enemy : enemy_list) {
@@ -607,11 +671,10 @@ int main() {
 				}
 			}
 
-
 			// 检测敌人与玩家的碰撞
 			bool is_game_over = false;  // 增加游戏结束标志
 			for (Enemy* enemy : enemy_list) {
-				if (enemy->CheckPlayerCollision(player)) {
+				if (enemy->CheckPlayerCollision(*player)) {
 					is_game_over = true;
 					break;  // 发现碰撞立即跳出循环
 				}
@@ -629,9 +692,15 @@ int main() {
 				if (MessageBox(GetHWnd(), text, _T("游戏结束"), MB_OKCANCEL | MB_ICONINFORMATION) == IDOK) {
 					// 重置游戏状态
 					is_game_started = false;
+					is_character_selection = false;
 					score = 0;
-					player.position = { 300, 300 };  // 重置玩家位置
+					player->position = { 300, 300 };  // 重置玩家位置
 
+					//删除玩家对象
+					if (player) {
+						delete player;
+						player = nullptr;
+					}
 					// 清空敌人
 					for (auto& enemy : enemy_list) delete enemy;
 					enemy_list.clear();
@@ -639,18 +708,9 @@ int main() {
 				else {
 					running = false;  // 如果点取消则退出游戏
 				}
-
-			
 			}
 		}
-		
-		static int counter = 0;
-		if (++counter % 5 == 0) {
-			idx_current_anim++;
-		}
 
-		//使动画循环播放
-		idx_current_anim = idx_current_anim % PLAYER_ANIM_NUM;
 
 
 		cleardevice();
@@ -659,19 +719,21 @@ int main() {
 		if (is_game_started) {
 			putimage(0, 0, &img_background);//铺背景图片
 
-			player.Draw(1000 / 144);
+			player->Draw(1000 / 144);
 			for (Enemy* enemy : enemy_list)
 				enemy->Draw(1000 / 144);
 			for (const Bullet& bullet : bullet_list)
 				bullet.Draw();
 			DrawPlayerScore(score);
 		}
+		else if (is_character_selection) {
+			DrawCharacterSelection();  // 绘制角色选择界面
+		}
 		else {
 			putimage(0, 0, &img_menu);
 			btn_start_game.Draw();
 			btn_quit_game.Draw();
 		}
-		
 
 		FlushBatchDraw();
 
@@ -682,10 +744,14 @@ int main() {
 		}
 	}
 
-	delete atlas_player_left;
-	delete atlas_player_right;
+	// 释放所有角色图集资源
+	for (int i = 0; i < 3; i++) {
+		delete atlas_player_left[i];
+		delete atlas_player_right[i];
+	}
 	delete atlas_enemy_left;
 	delete atlas_enemy_right;
+
 
 	EndBatchDraw();
 
