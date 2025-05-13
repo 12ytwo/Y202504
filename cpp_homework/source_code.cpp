@@ -262,14 +262,14 @@ public:
 		switch (edge) {
 		case SpawnEdge::Up:
 			position.x = rand() % WIDTH0;
-			position.y = -FRAME_HEIGHT;
+			position.y = -ENEMY_HEIGHT;
 			break;
 		case SpawnEdge::Down:
 			position.x = rand() % WIDTH0;
 			position.y = HEIGHT0;
 			break;
 		case SpawnEdge::Left:
-			position.x = -FRAME_WIDTH;
+			position.x = -ENEMY_WIDTH;
 			position.y = rand() % HEIGHT0;
 			break;
 		case SpawnEdge::Right:
@@ -283,16 +283,16 @@ public:
 
 	bool CheckBulletCollision(const Bullet& bullet) {
 		//将子弹等效为点，判断是否在敌人矩形内
-		bool is_overlap_x = bullet.position.x >= position.x && bullet.position.x <= position.x + FRAME_WIDTH;
-		bool is_overlap_y = bullet.position.y >= position.y && bullet.position.y <= position.y + FRAME_HEIGHT;
+		bool is_overlap_x = bullet.position.x >= position.x && bullet.position.x <= position.x + ENEMY_WIDTH;
+		bool is_overlap_y = bullet.position.y >= position.y && bullet.position.y <= position.y + ENEMY_HEIGHT;
 		return is_overlap_x && is_overlap_y;
 	}
 
 	bool CheckPlayerCollision(const Player& player) {
 		//将敌人中心位置等效为点，判断是否在玩家矩形内
-		POINT check_position = { position.x + FRAME_WIDTH / 2,position.y + FRAME_HEIGHT / 2 };
-		bool is_overlap_x = player.position.x >= position.x && player.position.x <= position.x + FRAME_WIDTH;
-		bool is_overlap_y = player.position.y >= position.y && player.position.y <= position.y + FRAME_HEIGHT;
+		POINT check_position = { position.x + ENEMY_WIDTH / 2,position.y + ENEMY_HEIGHT / 2 };
+		bool is_overlap_x = player.position.x >= position.x && player.position.x <= position.x + ENEMY_WIDTH;
+		bool is_overlap_y = player.position.y >= position.y && player.position.y <= position.y + ENEMY_HEIGHT;
 		return is_overlap_x && is_overlap_y;
 	}
 
@@ -311,8 +311,8 @@ public:
 	}
 
 	void Draw(int delta) {
-		int pos_shadow_x = position.x + (FRAME_WIDTH / 2 - SHADOW_WIDTH / 2);
-		int pos_shadow_y = position.y + FRAME_HEIGHT - 31;//偏移一点点
+		int pos_shadow_x = position.x + (ENEMY_WIDTH / 2 - SHADOW_WIDTH / 2);
+		int pos_shadow_y = position.y + ENEMY_HEIGHT - 31;//偏移一点点
 		putimage_alpha(pos_shadow_x, pos_shadow_y, &img_shadow);
 
 		if (facing_left)
@@ -339,8 +339,8 @@ public:
 	}
 
 private:
-	const int FRAME_WIDTH = 60;//敌人宽度
-	const int FRAME_HEIGHT = 60;//敌人高度
+	const int ENEMY_WIDTH = 60;//敌人宽度
+	const int ENEMY_HEIGHT = 60;//敌人高度
 	const int SHADOW_WIDTH = 48;//影子大小
 	const int SPEED = 4;//定义速度
 
@@ -417,6 +417,7 @@ private:
 	};
 
 private:
+
 	//检测鼠标点击
 	bool CheckCursorHit(int x, int y) {
 		return x >= region.left && x <= region.right && y >= region.top && y <= region.bottom;
@@ -466,15 +467,17 @@ public:
 
 protected:
 	void OnClick() {
+		is_game_started = true;
 		selected_character = character_index;
 		is_character_selection = false;
-		is_game_started = true;
+		Sleep(50);
 		mciSendString(_T("play bgm repeat from 0"), NULL, 0, NULL);
+
 	}
 
 private:
 	int character_index;
-	RECT region;//描述位置和大小
+	RECT region;
 };
 
 
@@ -517,11 +520,12 @@ void DrawPlayerScore(int score) {
 
 // 绘制角色选择界面
 void DrawCharacterSelection() {
+	static bool is_init = false;
 	static IMAGE img_character_bg;
 	static CharacterButton* btn_character[3] = { nullptr }; // 使用数组管理按钮
 
 	// 首次加载时初始化
-	if (!btn_character[0]) {
+	if (!btn_character[0]&&!is_init) {
 		loadimage(&img_character_bg, _T("img/character_selection_bg.png"), WIDTH0, HEIGHT0);
 
 		// 计算起始X坐标（整体居中）
@@ -544,6 +548,7 @@ void DrawCharacterSelection() {
 
 			btn_character[i] = new CharacterButton(rect, path_idle, path_hovered, path_pushed, i);
 		}
+		is_init = true;
 	}
 
 	// 绘制背景
@@ -618,6 +623,7 @@ int main() {
 	QuitGameButton btn_quit_game = QuitGameButton(region_btn_quit_game,
 		_T("img/ui_quit_idle.png"), _T("img/ui_quit_hovered.png"), _T("img/ui_quit_pushed.png"));
 
+
 	loadimage(&img_menu, _T("img/menu.png"), 1280, 720);
 	loadimage(&img_background, _T("img/background.png"), 1280, 720);
 
@@ -632,6 +638,7 @@ int main() {
 			}
 			else if (is_character_selection) {
 				// 角色选择界面的消息处理在DrawCharacterSelection函数中完成
+				DrawCharacterSelection();
 			}
 			else {
 				btn_start_game.ProcessEvent(msg);
