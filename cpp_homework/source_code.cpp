@@ -95,6 +95,7 @@ class Player {
 public:
 	const int PLAYER_WIDTH = 80;//玩家宽度
 	const int PLAYER_HEIGHT = 80;//玩家高度
+	const float PLAYER_RADIUS = 20.0f; // 玩家圆形碰撞半径
 	POINT position = { 300,300 };//初始化玩家位置
 public:
 	Player() {
@@ -190,6 +191,11 @@ public:
 		return position;
 	};
 
+	// 获取玩家半径
+	float GetR() const {
+		return PLAYER_RADIUS;
+	}
+
 private:
 	const int SHADOW_WIDTH = 32;//影子大小
 	const int SPEED = 5;//定义速度
@@ -207,6 +213,7 @@ private:
 class Bullet {
 public:
 	POINT position = { 0,0 };
+	const int R = 8; // 子弹半径
 
 public:
 	Bullet() = default;
@@ -234,11 +241,10 @@ public:
 		fillcircle(position.x, position.y, R);
 	}
 
-	int GetR()const {
+	// 获取子弹半径
+	int GetR() const {
 		return R;
 	}
-private:
-	const int R = 8;
 };
 
 
@@ -251,6 +257,10 @@ public:
 		Left,
 		Right
 	};
+
+	const int ENEMY_WIDTH = 60;  // 敌人宽度
+	const int ENEMY_HEIGHT = 60; // 敌人高度
+	const float ENEMY_RADIUS = 15.0f; // 敌人圆形碰撞半径
 
 	Enemy() {
 		loadimage(&img_shadow, _T("img/shadow_enemy.png"));
@@ -281,18 +291,37 @@ public:
 	}
 
 	bool CheckBulletCollision(const Bullet& bullet) {
-		//将子弹等效为点，判断是否在敌人矩形内
-		bool is_overlap_x = bullet.position.x >= position.x && bullet.position.x <= position.x + ENEMY_WIDTH;
-		bool is_overlap_y = bullet.position.y >= position.y && bullet.position.y <= position.y + ENEMY_HEIGHT;
-		return is_overlap_x && is_overlap_y;
+		// 计算敌人中心点
+		float enemy_center_x = position.x + ENEMY_WIDTH / 2;
+		float enemy_center_y = position.y + ENEMY_HEIGHT / 2;
+
+		// 计算子弹到敌人中心的距离平方
+		float dx = bullet.position.x - enemy_center_x;
+		float dy = bullet.position.y - enemy_center_y;
+		float distance_squared = dx * dx + dy * dy;
+
+		// 比较距离平方与半径和的平方
+		float radius_sum = ENEMY_RADIUS + bullet.GetR();
+		return distance_squared <= radius_sum * radius_sum;
 	}
 
 	bool CheckPlayerCollision(const Player& player) {
-		//将敌人中心位置等效为点，判断是否在玩家矩形内
-		POINT check_position = { position.x + ENEMY_WIDTH / 2,position.y + ENEMY_HEIGHT / 2 };
-		bool is_overlap_x = player.position.x >= position.x && player.position.x <= position.x + ENEMY_WIDTH;
-		bool is_overlap_y = player.position.y >= position.y && player.position.y <= position.y + ENEMY_HEIGHT;
-		return is_overlap_x && is_overlap_y;
+		// 计算敌人中心点
+		float enemy_center_x = position.x + ENEMY_WIDTH / 2;
+		float enemy_center_y = position.y + ENEMY_HEIGHT / 2;
+
+		// 计算玩家中心点
+		float player_center_x = player.GetPosition().x + player.PLAYER_WIDTH / 2;
+		float player_center_y = player.GetPosition().y + player.PLAYER_HEIGHT / 2;
+
+		// 计算两中心点距离平方
+		float dx = player_center_x - enemy_center_x;
+		float dy = player_center_y - enemy_center_y;
+		float distance_squared = dx * dx + dy * dy;
+
+		// 比较距离平方与半径和的平方
+		float radius_sum = ENEMY_RADIUS + player.GetR();
+		return distance_squared <= radius_sum * radius_sum;
 	}
 
 	void Move(const Player& player) {
@@ -338,8 +367,8 @@ public:
 	}
 
 private:
-	const int ENEMY_WIDTH = 60;//敌人宽度
-	const int ENEMY_HEIGHT = 60;//敌人高度
+	// const int ENEMY_WIDTH = 60;//敌人宽度 
+	// const int ENEMY_HEIGHT = 60;//敌人高度 
 	const int SHADOW_WIDTH = 48;//影子大小
 	const int SPEED = 4;//定义速度
 
