@@ -1,2 +1,3 @@
 ﻿  source_code.cpp
+C:\Users\ASUS\Desktop\cpp_homework\cpp_homework\source_code.cpp(586,12): warning C4101: “msg”: 未引用的局部变量
   cpp_homework.vcxproj -> C:\Users\ASUS\Desktop\cpp_homework\x64\Debug\cpp_homework.exe

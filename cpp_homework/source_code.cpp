@@ -2,7 +2,6 @@
 #include<vector>
 #include<cmath>
 
-
 IMAGE img_background;
 IMAGE img_shadow;
 
@@ -98,7 +97,7 @@ public:
 	const int PLAYER_HEIGHT = 80;//玩家高度
 	POINT position = { 300,300 };//初始化玩家位置
 public:
-	Player( ) {
+	Player() {
 		loadimage(&img_shadow, _T("img/shadow_player.png"));
 		// 使用选中的角色图集
 		anim_left = new Animation(atlas_player_left[selected_character], 45);
@@ -480,8 +479,56 @@ private:
 	RECT region;
 };
 
+// 角色选择界面相关变量
+static IMAGE img_character_bg;
+static CharacterButton* btn_character[3] = { nullptr }; // 使用数组管理按钮
+static bool char_selection_initialized = false;
 
+// 初始化角色选择界面
+void InitCharacterSelection() {
+	if (!char_selection_initialized) {
+		loadimage(&img_character_bg, _T("img/character_selection_bg.png"), WIDTH0, HEIGHT0);
+		int total_width = CHAR_BTN_WIDTH * 3 + CHAR_BTN_SPACING * 2;
+		int start_x = (WIDTH0 - total_width) / 2;
 
+		for (int i = 0; i < 3; i++) {
+			RECT rect = {
+				start_x + i * (CHAR_BTN_WIDTH + CHAR_BTN_SPACING),
+				CHAR_BTN_TOP,
+				start_x + (i + 1) * CHAR_BTN_WIDTH + i * CHAR_BTN_SPACING,
+				CHAR_BTN_TOP + CHAR_BTN_HEIGHT
+			};
+
+			TCHAR path_idle[64], path_hovered[64], path_pushed[64];
+			_stprintf_s(path_idle, _T("img/character%d_idle.png"), i);
+			_stprintf_s(path_hovered, _T("img/character%d_hovered.png"), i);
+			_stprintf_s(path_pushed, _T("img/character%d_pushed.png"), i);
+
+			btn_character[i] = new CharacterButton(rect, path_idle, path_hovered, path_pushed, i);
+		}
+		char_selection_initialized = true;
+	}
+}
+
+// 绘制角色选择界面（仅负责绘制）
+void DrawCharacterSelectionUI() {
+	putimage(0, 0, &img_character_bg);
+	setbkmode(TRANSPARENT);
+	settextcolor(RGB(80, 134, 85));
+	settextstyle(36, 0, _T("微软雅黑"));
+	outtextxy(WIDTH0 / 2 - 120, 180, _T("请选择你的宝可梦"));
+
+	for (int i = 0; i < 3; i++) {
+		btn_character[i]->Draw();
+	}
+}
+
+// 处理角色选择界面事件
+void ProcessCharacterSelectionEvent(const ExMessage& msg) {
+	for (int i = 0; i < 3; i++) {
+		btn_character[i]->ProcessEvent(msg);
+	}
+}
 
 //生成新的敌人
 void TryGenerateEnemy(std::vector<Enemy*>& enemy_list) {
@@ -515,65 +562,6 @@ void DrawPlayerScore(int score) {
 	settextcolor(RGB(80, 134, 85));
 	outtextxy(10, 10, text);
 }
-
-
-
-// 绘制角色选择界面
-void DrawCharacterSelection() {
-	static bool is_init = false;
-	static IMAGE img_character_bg;
-	static CharacterButton* btn_character[3] = { nullptr }; // 使用数组管理按钮
-
-	// 首次加载时初始化
-	if (!btn_character[0]&&!is_init) {
-		loadimage(&img_character_bg, _T("img/character_selection_bg.png"), WIDTH0, HEIGHT0);
-
-		// 计算起始X坐标（整体居中）
-		int total_width = CHAR_BTN_WIDTH * 3 + CHAR_BTN_SPACING * 2;
-		int start_x = (WIDTH0 - total_width) / 2;
-
-		// 初始化三个按钮
-		for (int i = 0; i < 3; i++) {
-			RECT rect = {
-				start_x + i * (CHAR_BTN_WIDTH + CHAR_BTN_SPACING),
-				CHAR_BTN_TOP,
-				start_x + (i + 1) * CHAR_BTN_WIDTH + i * CHAR_BTN_SPACING,
-				CHAR_BTN_TOP + CHAR_BTN_HEIGHT
-			};
-
-			TCHAR path_idle[64], path_hovered[64], path_pushed[64];
-			_stprintf_s(path_idle, _T("img/character%d_idle.png"), i);
-			_stprintf_s(path_hovered, _T("img/character%d_hovered.png"), i);
-			_stprintf_s(path_pushed, _T("img/character%d_pushed.png"), i);
-
-			btn_character[i] = new CharacterButton(rect, path_idle, path_hovered, path_pushed, i);
-		}
-		is_init = true;
-	}
-
-	// 绘制背景
-	putimage(0, 0, &img_character_bg);
-
-	// 绘制标题
-	setbkmode(TRANSPARENT);
-	settextcolor(RGB(80, 134, 85));
-	settextstyle(36, 0, _T("微软雅黑"));
-	outtextxy(WIDTH0 / 2 - 120, 180, _T("请选择你的宝可梦"));
-
-	// 处理事件和绘制
-	ExMessage msg;
-	while (peekmessage(&msg)) {
-
-		for (int i = 0; i < 3; i++) {
-			btn_character[i]->ProcessEvent(msg);
-		}
-	}
-
-	for (int i = 0; i < 3; i++) {
-		btn_character[i]->Draw();
-	}
-}
-
 
 
 int main() {
@@ -631,14 +619,15 @@ int main() {
 
 	while (running) {
 		DWORD begin_time = GetTickCount();
+		ExMessage msg;
 
+		// 统一消息处理
 		while (peekmessage(&msg)) {
 			if (is_game_started) {
-				player->ProcessEvent(msg);
+				if (player) player->ProcessEvent(msg);
 			}
 			else if (is_character_selection) {
-				// 角色选择界面的消息处理在DrawCharacterSelection函数中完成
-				DrawCharacterSelection();
+				ProcessCharacterSelectionEvent(msg); // 处理角色选择事件
 			}
 			else {
 				btn_start_game.ProcessEvent(msg);
@@ -646,6 +635,7 @@ int main() {
 			}
 		}
 
+		// 游戏逻辑
 		if (is_game_started) {
 			if (!player) {
 				player = new Player();
@@ -718,8 +708,6 @@ int main() {
 			}
 		}
 
-
-
 		cleardevice();
 		//绘图
 
@@ -734,7 +722,8 @@ int main() {
 			DrawPlayerScore(score);
 		}
 		else if (is_character_selection) {
-			DrawCharacterSelection();  // 绘制角色选择界面
+			InitCharacterSelection(); // 确保初始化
+			DrawCharacterSelectionUI(); // 绘制角色选择界面
 		}
 		else {
 			putimage(0, 0, &img_menu);
@@ -759,6 +748,10 @@ int main() {
 	delete atlas_enemy_left;
 	delete atlas_enemy_right;
 
+	// 释放角色选择按钮资源
+	for (int i = 0; i < 3; i++) {
+		delete btn_character[i];
+	}
 
 	EndBatchDraw();
 
